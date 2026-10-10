@@ -1,0 +1,297 @@
+---
+title: "Data Viz"
+format: html
+editor: visual
+---
+
+# Data Visualization Assignment: Telling a Story with Data
+
+## Purpose
+
+The goal of this assignment is **not simply to make several good-looking graphs**. Your goal is to use a sequence of visualizations to communicate an empirical **story**: to guide a reader through a question, pattern, comparison, complication, or resolution in a deliberate order.
+
+A useful test: **if your figures could be rearranged in any order without changing the meaning of the presentation, you probably have a collection of plots rather than a data story.**
+
+You will then tell the **same underlying story twice**. The evidence should remain the same, but your design choices, level of technical detail, prose, annotations, and use of interactivity should reflect two different communication settings:
+
+1.  A **scientific article**
+2.  An **accessible/dynamic web-based outlet**
+
+At least **two substantive data visualizations** are required in each version.
+
+------------------------------------------------------------------------
+
+## Learning Goals
+
+By completing this assignment, you should be able to:
+
+- Identify a clear empirical message in a dataset and organize evidence into a coherent narrative arc.
+- Create multiple visualizations that perform distinct jobs within that narrative rather than redundantly displaying the same result.
+- Use R to produce polished, reproducible data visualizations and a rendered web document.
+- Adapt visualization design and explanatory text to different audiences and publication contexts.
+- Distinguish scientific precision and technical reporting from public-facing clarity, accessibility, and engagement.
+- Use Git and GitHub to make the complete analysis reproducible and GitHub Pages to publish the finished work.
+
+------------------------------------------------------------------------
+
+# 1. Define the Story
+
+**Begin with the story, not the chart type.**
+
+Before building your final visualizations, decide what you want a reader to learn and how the evidence needs to unfold.
+
+### Story Summary — 250 Words Maximum
+
+At the beginning of your site, provide a concise summary of the **story you are trying to tell**.
+
+This is not an abstract describing everything you did. Instead, identify:
+
+- the central question, observation, or puzzle;
+- the key development, comparison, or tension; and
+- the conclusion, resolution, or takeaway that the visual evidence supports.
+
+Use Claus Wilke's discussion of storytelling as a guide:
+
+**Fundamentals of Data Visualization — Chapter 29: Telling a Story and Making a Point**\
+https://clauswilke.com/dataviz/telling-a-story.html
+
+In particular, attend to the idea that figures should have a clear **purpose within a story arc**.
+
+------------------------------------------------------------------------
+
+# 2. Tell the Story with Visualizations
+
+After your summary, walk the reader through the story using **text and at least two substantive data visualizations**.
+
+The prose and figures should work together. Introduce what the reader needs to know, direct their attention toward the relevant evidence, and explain why each new visualization advances the story.
+
+Your visualizations should satisfy the following principles:
+
+- Each visualization should have a **clear purpose** in the sequence.
+
+- The sequence should create **progression**. For example:
+
+  **establish a pattern → introduce a comparison or complication → resolve or reinterpret the initial pattern**
+
+- Use informative titles, labels, captions, and/or annotations so readers know what they should notice.
+
+- Do not include a plot merely because you made it during data exploration. **Every final figure should earn its place in the story.**
+
+- At least two visualizations are required. Use more when they genuinely improve the narrative.
+
+------------------------------------------------------------------------
+
+# 3. Tell the Same Story for Two Outlets
+
+You will now tell the same empirical story **twice**.
+
+The underlying evidence and substantive conclusions should remain consistent. What should change is **how you communicate that evidence to the intended audience**.
+
+## Version A: Scientific Article
+
+Present your story as though the figures and accompanying text were being prepared for a conventional scientific journal article.
+
+Prioritize **precision, interpretability, reproducibility, and technical completeness**.
+
+Your scientific version should generally:
+
+- Use **static figures**.
+- Be fully interpretable in **black-and-white or greyscale** as is often required by scientific journals. Do not rely on colour to encode essential information.
+- Use conventional scientific labels, units, scales, legends/direct labels, and figure captions as appropriate.
+- Report technical information needed to interpret the visualization—for example, sample sizes, uncertainty, model quantities, or definitions where relevant.
+- Keep decorative elements restrained. The visual hierarchy should emphasize the **data and the scientific point**.
+- Use prose appropriate for a scientifically literate reader. Technical terminology is appropriate when it improves precision.
+
+------------------------------------------------------------------------
+
+## Version B: Accessible / Dynamic Outlet
+
+Now present the **same empirical story** for an audience encountering it through an engaging web article, explainer, or similar public-facing medium.
+
+Prioritize **clarity, accessibility, narrative flow, and reader engagement** without changing or overstating the evidence.
+
+Your accessible/dynamic version might:
+
+- Use plain-language, **takeaway-oriented headings** and explanatory text.
+- Use colour, highlighting, direct annotation, icons, small multiples, or other design devices when they help guide attention.
+- Use interactive or dynamic elements—for example, tooltips, filters, animation, or `plotly`—when they add genuine explanatory value. **Interactivity is cool, but is not required for its own sake.**
+- Reduce unnecessary technical detail in the main visual display while preserving enough context for the claims to be understood accurately.
+- Make deliberate accessibility choices: readable text, sufficient contrast, sensible colour use, clear labels, and alternatives to colour-only encoding.
+- Think about **pacing**. Guide the reader through the evidence rather than confronting them with all available information at once.
+
+### Important: Adaptation Is Not Decoration
+
+The two versions should **not** simply be identical figures with a different `ggplot2` theme applied.
+
+Your choices should demonstrate that you understand how **audience and medium change what information is foregrounded, how it is explained, and how the reader's attention is directed**, while the underlying empirical claims remain consistent.
+
+------------------------------------------------------------------------
+
+# Exemplars: What to Pay Attention To
+
+The following examples illustrate different aspects of effective visual storytelling.
+
+## 1. Good Authority: Republicans' Fascination with Testosterone, in Three Charts
+
+https://goodauthority.org/news/republicans-fascination-with-testosterone-in-three-charts/
+
+This is close to the **scope of the story expected for this assignment**.
+
+Pay particular attention to how three relatively conventional plots become an argument through **sequencing**. Each visualization answers or develops something raised by the previous one, while the prose explains why the next piece of evidence matters.
+
+Notice that the effectiveness of the piece does not depend on technically elaborate visualizations. The strength comes from deciding:
+
+**What should the reader see first? What question does that create? What evidence should they see next?**
+
+------------------------------------------------------------------------
+
+## 2. The Economist: The Banana Index
+
+Data and materials:\
+https://github.com/TheEconomist/banana-index-data
+
+This example illustrates how **repeating a visual grammar while changing the analytical perspective** can itself tell a story.
+
+The comparison changes depending on how the environmental impact of food is evaluated—for example, relative to weight, calories, or protein.
+
+Pay attention to how holding much of the visual form constant makes it easier for the reader to focus on the thing that *is* changing: the basis of comparison.
+
+This is also an excellent example of making a potentially technical measurement issue **intuitive and visually accessible**.
+
+------------------------------------------------------------------------
+
+## 3. The Pudding: Is the Love Song Dying?
+
+https://pudding.cool/2024/11/love-songs/
+
+Consider this an **aspirational example of public-facing data storytelling**.
+
+You are **not** expected to reproduce the sophistication of its web development.
+
+Instead, pay attention to:
+
+- pacing;
+- progressive disclosure;
+- annotation;
+- interactivity where it is relevant and useful;
+- accessible language;
+- transitions between pieces of evidence; and
+- how successive visualizations set up, qualify, or reinterpret the initial claim.
+
+Think about **when** the authors choose to show each piece of information rather than merely what visualization technique they use.
+
+------------------------------------------------------------------------
+
+## Learning from the Exemplars
+
+Do not imitate these examples mechanically.
+
+Instead, use them to study how authors decide:
+
+**What does the reader see first?**
+
+**What question or tension does that create?**
+
+**What evidence comes next?**
+
+**How does that evidence change what the reader thinks about the previous visualization?**
+
+**What should the reader conclude by the end?**
+
+That sequence—not simply the number or attractiveness of the plots—is what turns several visualizations into a **data story**.
+
+------------------------------------------------------------------------
+
+# Required Website Structure
+
+Your GitHub Pages site should make the following four components easy to find.
+
+### 1. Story Summary
+
+**250 words or fewer.**
+
+State the empirical story you intend to tell.
+
+### 2. Version A: Scientific Article
+
+Text plus **at least two visualizations** that tell your story in a scientific-journal style.
+
+### 3. Version B: Accessible / Dynamic Outlet
+
+Text plus **at least two visualizations** that tell the same story for a broader, web-oriented audience.
+
+### 4. Data / Source Note
+
+Identify the dataset and its source. Briefly describe any important limitations, transformations, or other information needed to understand your analysis.
+
+------------------------------------------------------------------------
+
+# Reproducibility and GitHub Requirements
+
+Your repository should contain everything needed to understand and reproduce the rendered site.
+
+A reader should **not** have to reconstruct your workflow from copied-and-pasted output.
+
+Your repository should include:
+
+- All R/Quarto source files used to generate the site.
+- The data, when redistribution is permitted, or clear code/instructions for obtaining the data when it is not.
+- All data cleaning, transformation, analysis, and visualization code required for the final output.
+- A sensible project structure and informative file names.
+- A rendered GitHub Pages site that works from the submitted URL.
+- No broken figures, missing local files, or code that depends on unexplained objects from your interactive R session.
+
+------------------------------------------------------------------------
+
+# What to Submit
+
+Submit **exactly two links** through the course submission system:
+
+1.  **GitHub repository URL** — the repository containing your complete source code/project.
+2.  **GitHub Pages URL** — the live website where the finished assignment is rendered and served.
+
+Before submitting, open both links in a **private/incognito browser window** and confirm that they are accessible and that the site renders correctly.
+
+------------------------------------------------------------------------
+
+# What Strong Work Will Demonstrate
+
+### Story
+
+A focused empirical point with a discernible narrative arc. The figures collectively move the reader from one idea to the next.
+
+### Purposeful Visualization
+
+Each figure makes a clear point, uses an appropriate visual encoding, and contributes something distinct to the story.
+
+### Audience Adaptation
+
+The scientific and accessible/dynamic versions make **substantively different and well-justified communication choices**, rather than superficial changes in themes or colours.
+
+### Clarity and Accessibility
+
+Titles, annotations, labels, scales, colour/greyscale choices, and prose make the intended interpretation easy to follow without misleading the reader.
+
+### Technical Quality
+
+Visualizations are accurate, polished, and appropriate to the data. Code is functional and reproducible.
+
+### Reproducible Publication
+
+The repository is organized and complete, and the GitHub Pages site renders successfully from the submitted materials.
+
+------------------------------------------------------------------------
+
+# Final Check Before You Submit
+
+Ask yourself:
+
+- Can I state my **story** in a few sentences without simply listing the chart types I made?
+- Do I have at least two substantive visualizations in each version?
+- Does every figure have a specific job in the story?
+- Would changing the order of my figures weaken or change the narrative? If not, have I really created a sequence?
+- Does the scientific version look and read like material that could plausibly appear in a scientific article?
+- Does the accessible/dynamic version guide a broader reader toward the same evidence without sacrificing accuracy?
+- Are both versions telling the **same underlying empirical story**?
+- Can someone reproduce the site from my repository?
+- Do both submitted URLs work?

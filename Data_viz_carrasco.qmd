@@ -1,0 +1,535 @@
+---
+title: "9041 Data Viz 'Bird Sightings at Sea (1969-1990)'"
+author: Salomé Carrasco
+date: today
+format: 
+    html:
+      toc: true
+      code-fold: true
+      code-summary: "Show code"
+      df-print: paged
+execute:
+    echo: false
+    warning: false
+---
+
+## New Zealand Bird Sightings Across the Sea
+
+------------------------------------------------------------------------
+
+## Scientific Article - Version A
+
+### Introduction
+
+Historical observations are vital for future work in the field of conservation and biodiversity for scientists to better understand how the natural world changes in the wake of human influence. In ship logs from Captain John Jekins, estimated numbers of bird observations (flocks) and various behaviors alongside human activities aboard ships are recorded. This work shows the avian and human interactions observed over 21 years (1969-1990). I hypothesize that bird behavior will be influenced by ship activity. I also hypothesize that season will show a significant difference in bird behavior.
+
+
+```{r}
+#| label: load-libraries
+#| echo: FALSE
+#| output: FALSE
+# Repro doc doesn't show this code
+
+#install.packages("tidytuesdayR")
+library(tidyverse)
+library(gt)
+library(janitor)
+library(ggplot2)
+#library(lubridate)
+library(patchwork)#used to put graphs together
+```
+
+```{r}
+#| label: Upload-data
+#| echo: FALSE
+#| output: FALSE
+
+tuesdata <- tidytuesdayR::tt_load(2026, week = 15)
+
+beaufort_scale <- tuesdata$beaufort_scale
+birds <- tuesdata$birds
+sea_states <- tuesdata$sea_states
+ships <- tuesdata$ships
+```
+### Methods
+
+Data was taken from the tidytuesday weekly dataset collection on GitHub uploaded 2026-04-14. Dataframes birds and ships are combined for analysis. Overall there are `r length(birds$record_id)` observations recorded from this dataset. The dataset is extended to allow for each unique recorded behavior to be listed in a new column so as not to lose data from observations with birds observed doing more than one behavior. Lowest recorded ship activities and bird behaviors were removed from the dataset. Ship `activity` and bird `behavior` were tested together using a ChiSquare Test to determine significance. Graphs were made to show the average behaviors recorded across different seasons and the average estimated number of flocks observed participating in certain behaviors across the seasons.
+
+
+```{r} 
+#| echo: FALSE
+#| output: FALSE
+
+# Inspect data
+names(tuesdata)#checking to see if correct dataset was downloaded
+
+head(beaufort_scale) #this shows the intensity of wind experience on the ship
+
+head(sea_states)#how rough the water is from calm to rough (6 states)
+
+head(birds) #26 classifications
+#List of behaviors: 
+#feeding, water, ice, ship, hand, flying past, accompanying = flying alongside ship, following = following ship's wake(behind), naturally feeding
+
+summary(birds)
+length(birds$record_id)
+#49,019 records, 
+#mean count (estimated individuals) = 41.94
+#mean number feeding = 11.31
+#mean number sitting on water = 4.13
+#mean number sitting on ice = 0.0248
+#mean number flying past = 23.62
+#mean number accompanying = 0.339
+#mean number following ship = 0.9958
+#sitting on ship - 86 instances
+#in hand - 3 instances
+
+head(ships) #shows the date, time, lat and long, activity, cloud cover, precipitation, season, ect.
+
+unique(ships$activity) #7 different activities, on the tidytuesday read.me it says there are 10 different activities. Missing whaling, dropping trash, and cleaning fish
+
+## Focus: Bird behaviors (birds) and Ship activity (ships)
+# 1 - Keep: ships - record_id, date, time, season, activity 
+# 2 - Keep: birds - record_id, [species_common_name, species_abbreviation], count, feeding, sitting_on_water, sitting_on_ice, sitting_on_ship, in_hand, flying_past, accompanying, following_ship, moulting, naturally_feeding
+# 3 - Currently bird behaviors are listed individually by column, need to convert to one column named: behaviors
+#This will allow a match with the ship activity log.
+# 4 - Ships and birds dataframes will be combined using the record_id
+#Outlier behaviors (lowest) will be removed to aid in visualization
+```
+
+```{r}
+#| label: ships-data
+#| echo: FALSE
+#| output: FALSE
+# 1 - focused ship dataframe (ship_foc): record_id, date, time, season, activity
+
+ship_foc<- ships |>
+  select(record_id, date, time, season, activity)
+head(ship_foc)
+```
+
+
+```{r}
+#| label: bird-data
+#| echo: FALSE
+#| output: FALSE
+
+birds|>
+  summarise(total_species = n_distinct(species_abbreviation)) #321 distinct species names recorded
+#this number is inflated due to variable combinations of different species when the observation wasn't fully known
+
+num_species <- birds |>
+  count(species_common_name, species_abbreviation, name = "n") |>
+  arrange(desc(n)) #this shows the number of total observations for each recorded species
+head (num_species) #at a glance the wandering albatross was the most recorded along with the different species of petrels
+```
+
+```{r}
+#| label: data-clean-birds
+#| echo: FALSE
+#| output: FALSE
+# 2 - Focus bird dataframe keeping id, species names, count, and behaviors
+#I chose to remove the n_behaviors to focus on number of records per log, not estimated number of individuals.
+
+#cleaning data
+colnames(birds)
+
+#Selected dataframe
+bird_foc <-birds |>
+  select(record_id,species_common_name, species_abbreviation, count, in_hand, 
+         feeding,
+         flying_past,
+         sitting_on_water, 
+         sitting_on_ice,
+         sitting_on_ship,
+         accompanying,
+         following_ship,
+         moulting,
+         naturally_feeding)
+```
+
+```{r}
+#| label: bird-behav-list
+#| echo: FALSE
+#| output: FALSE
+# 3 - Converting true values into the column name for each observation, then creating extra rows with species observed doing multiple things so they have more than 1 row representing their behavior
+
+bird_foc_behav <- bird_foc |>
+  pivot_longer( #this extends the dataset to have more rows so data isn’t lost/collapsed
+    cols=c(in_hand, 
+         feeding,
+         flying_past,
+         sitting_on_water, 
+         sitting_on_ice,
+         sitting_on_ship,
+         accompanying,
+         following_ship,
+         moulting,
+         naturally_feeding),
+  names_to = "behavior", #have all of these under the new column name
+  values_to= "value") |> #specifies the name of the column (ex: feeding) to create data stored in cell values(ex: true/false)
+  filter(value == TRUE) |> #take the true values and change them to the column title
+  select(-value)#removes the value column and keeps the rest of the bird_spec columns
+
+#number of instances behavior was recorded
+bird_foc_behav |>
+  count(behavior) |>
+  arrange(desc(n))
+```
+
+```{r}
+#| label: combine-bird-ship
+#| echo: FALSE
+#| output: FALSE
+
+# 4 - Select Ships and Birds dataframes are combined
+
+bird_ship_foc <- bird_foc_behav |>
+  left_join(ship_foc, by = "record_id")
+head(bird_ship_foc)
+```
+
+```{r}
+#| label: observ-comb-dat
+#| echo: FALSE
+#| output: FALSE
+
+ship_act_n<- bird_ship_foc |>
+  count(activity) |>
+  arrange(desc(n))
+
+#remove the lowest observations
+bird_ship_foc <- bird_ship_foc |>
+  filter(
+    !activity %in% c("potting", "oceanography", "flying helicopters"),
+    !behavior %in% c("sitting_on_ship", "sitting_on_ice", "in_hand")
+  )
+
+#unique(bird_ship_foc$activity)
+#unique(bird_ship_foc$behavior)
+
+## Visualizations
+#Most observed species - bar/pie chart
+#Behavior in relation to ship activities - bar
+#Behavior in relation to time/season
+#Number of species observed on average per season
+#number of birds observed across time
+```
+
+```{r}
+#| label: chisq-test
+#| echo: FALSE
+#| output: FALSE
+
+#Behavior in relation to ship activities 
+behavior_table <- xtabs(~ behavior + activity, data = bird_ship_foc)
+chisq.test(behavior_table) #states significance with warning may be incorrect
+```
+
+```{r}
+#| label: behav-ship-graphs
+#| echo: FALSE
+#| output: FALSE
+
+#Main graph
+
+graph_1 <- ggplot(bird_ship_foc)+
+  aes(x=activity, fill=behavior)+
+  geom_bar()+
+  labs(
+    x= "Activity",
+    y = "Count",
+    fill = "Behavior",
+    title="Main activities",
+    caption = 
+    "Figure 1: This graph shows the types of bird behavior observered 
+    with ship activities. The graph on the right displays fishing and trawling
+    in detail.")+
+  theme_minimal()+
+  theme( axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.caption = element_text(size =9, hjust=0))
+
+#secondary focus graph
+
+graph_2 <- ggplot(bird_ship_foc |>
+         filter(activity %in% c("line fishing", "trawling"))) +
+  aes(x = activity, fill = behavior) +
+  geom_bar()+
+  labs(
+    x= "Activity",
+    y = "Count",
+    fill = "Behavior",
+    title="Line fishing and trawling (focus)")+
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#combining and removing the extra legend/key
+ggfig1 <- (graph_1 + theme(legend.position = "none")) +
+  graph_2 +
+  plot_layout(widths = c(3, 1), heights = c(3, 1))
+```
+
+```{r}
+#| label: behav-season
+#| echo: FALSE
+#| warning: false
+#| output: FALSE
+#Behavior in relation to season (1)
+
+#how many birds are observed per season in connection to behavior
+behavior_season <- bird_ship_foc |>
+  filter(!is.na(season), !is.na(behavior)) |>
+  count(season, behavior, name = "records")
+
+#First Graph - number of birds sightings recorded across the seasons
+ggfig2 <- ggplot(behavior_season,
+       aes(x = season, y = records,
+           color = behavior, shape = behavior)) +
+  geom_line(position = position_dodge(width = 0.5))+
+  geom_point(size = 3, position = position_dodge(width = 0.5)) +
+  geom_smooth(aes(group = behavior),
+    method = "loess",
+    se = FALSE #this is because there is no standard error
+    )+
+  labs(
+    title = "Recorded Bird Behaviour Across Seasons",
+    x = "Season",
+    y = "Number of Behaviour Records",
+    color = "Behaviour",
+    shape = "Behaviour",
+    caption = 
+    "Figure 2: This graph shows the number of individual bird 
+    behavior sightings recorded across the seasons. Each shape and color is 
+    associated with a different behavior seen from the birds. The colored lines 
+    represent the general trend across the seasons.")+
+  theme_minimal()+
+  theme( plot.caption = element_text(size =9, hjust=0)) +
+  theme_minimal()
+```
+
+```{r}
+#| label: flock-behav-season
+#| echo: FALSE
+#| warning: false
+#| output: FALSE
+
+#Behavior in relation to season (2)
+
+#Average estimated birds observed per season
+
+bird_seas_avg <- bird_ship_foc |>
+  group_by(season, behavior) |>
+  summarise(avg_count = mean(count, na.rm = TRUE),
+            .groups="drop") #warning stated to drop the last group
+
+ggfig3 <-ggplot(bird_seas_avg,
+       aes(x = season, y = avg_count,
+           color = behavior, shape = behavior)) +
+  geom_point(size = 3, position = position_dodge(width = 0.5)) +
+  geom_smooth(aes(group = behavior),
+    method = "loess",
+    se = FALSE #this is because there is no standard error
+    )+
+  labs(
+    title = "Flock Behaviour Across Seasons",
+    x = "Season",
+    y = "Average Number of Estimated Birds",
+    color = "Behaviour",
+    shape = "Behaviour",
+    caption = 
+    "Figure 3: This graph shows the recorded behaviors associated
+    with the number of estimated birds observed (flocks) across the seasons. 
+    Each shape and color is associated with a different behavior seen from 
+    the birds. The colored lines represent the general trend across the seasons.")+
+  theme_minimal()+
+  theme(plot.caption = element_text(size =9, hjust=0))+
+  theme_minimal()
+
+```
+
+```{r}
+#| label: bird-pie-chart
+#| echo: FALSE
+#| output: FALSE
+
+num_species_800 <- num_species |>
+  filter(n >800) #Which species were recorded more than 800 times
+
+# Calculate precentage for each observation
+spec_perc <- num_species_800 |>
+  mutate(percentage = round_half_up((n / sum(n)) * 100, digits = 1))
+
+ggplot(spec_perc, aes(x="", y=percentage, fill=species_common_name)) +
+  geom_bar(stat="identity", width=1, color="white")+
+  coord_polar("y", start=0)+  
+    geom_text(aes(label = percentage),
+            position = position_stack(vjust = 0.5))+
+  theme_void() 
+```
+
+### Results
+
+In this data set, we see that bird behavior is observed to have some correlation with ship activity (ChiSquare Test), though the test is most likely skewed due to the low number of recorded observations during different ship activities. One can see frequency of ship activities greatly leans towards steaming and sailing @fig-ship-act-n. 
+```{r}
+#| label: fig-ship-act-n
+#| echo: false
+#display chart
+ship_act_n
+```
+In @fig-ggfig1 we can see that most of the observations of bird behavior was seen while the ship was sailing, where a majority of behaviors were the birds seen following or flying past the ships. In the two categories with less observations we see less birds following the ship and more accompanying or flying past. We can also see the birds are seen feeding as well during line fishing and trawling. 
+```{r}
+#| label: fig-ggfig1
+#| echo: false
+#display graph
+ggfig1
+```
+In  @fig-ggfig2 we see a peak in overall observations of birds flying past in the summer and steep decline in the winter, while in the spring there's more following the ship in the spring and less in the autumn.
+```{r}
+#| label: fig-ggfig2
+#| echo: false
+#display graph
+ggfig2
+```
+In @fig-ggfig3 we see a peak in the numbers of birds of naturally feeding and feeding in the spring. We also see a decline in numbers of birds observed in the winter and autumn in general.
+```{r}
+#| label: fig-ggfig3
+#| echo: false
+#| #display
+ggfig3
+```
+
+### Conclusion
+From this dataset we can see fluctuations in avian behavior across the seasons and during activities on a ship with a trend of feeding increase during the spring and summer and a general observation of birds accompanying ships while fishing. It would be interesting to see more observations of avian behavior around fishing boats from the past and now present.
+
+------------------------------------------------------------------------
+
+## Accessible/Dynamic Outlet Article - Version B
+
+### New Zealand Bird Sightings Across the Sea
+
+While out at sea, Captain John Arthur Francis Jenkins would keep a log of the birds his crew would observe on his travels across the Pacific Ocean, from the Tasman Sea to the Southern Ocean of Antarctica. During his travels spanning 21 years (1996-1990) he would record the number of birds, their names, age, sex, plumage phases, and behaviors alongside a record of the weather, season, location, and activities on the ship. All of these records are kept at [The Museum of New Zealand](https://www.tepapa.govt.nz) in Te Papa Tongarewa, of which we can observe through the help of GitHub's tidytuesday dataset collection! With the danger of bird population decline, these observations can give us a glimpse into the past of what once was with abundance of bird populations. Let's take a look. We will investigate how many and what kinds of birds are observed during different activities on the ship. What behaviors do these birds have at different activities? 
+
+```{r}
+#| label: behav-ship-mod
+#| echo: FALSE
+#| output: FALSE
+
+#Main graph
+
+graph_1a <- ggplot(bird_ship_foc)+
+  aes(x=activity, fill=behavior)+
+  geom_bar()+
+  labs(x= "Activity",
+       y = "Count",
+       fill = "Behavior",
+       title="Main activities",
+       caption = "We can see the types of bird behaviors seen with ship activities. 
+    The graph on the right shows behaviors seen while fishing.")+
+  theme_minimal()+
+  theme( axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.caption = element_text(size =9, hjust=0))
+
+#secondary focus graph
+
+graph_2a <- ggplot (bird_ship_foc |>
+         filter(activity %in% c("line fishing", "trawling"))) +
+  aes(x = activity, fill = behavior) +
+  geom_bar()+
+  labs( x= "Activity",
+        y = "Count",
+        fill = "Behavior",
+        title="Fishing activities")+
+   scale_fill_discrete(
+    name = "Bird Behaviour",
+    labels = c(
+      "flying" = "Flying",
+      "feeding" = "Feeding",
+      "sitting_on_water" = "Swimming in water",
+      "accompanying" = "Accompanying",
+      "flying_past" = "Flying by",
+      "following_ship" = "Following",
+      "naturally_feeding" = "Naturally Feeding"
+      
+    ))+
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#combining and removing the extra legend/key
+ggfig1a <- (graph_1a + theme(legend.position = "none")) +
+  graph_2a +
+  plot_layout(widths = c(4, 1), heights = c(4, 1))
+```
+
+```{r}
+#| label: fig-ggfig1a
+#| echo: false
+#display graph
+ggfig1a
+```
+
+### Southern Ocean bird behavior and ship activity
+We see that birds were often seen while the ship was sailing and still on the sea waters. During the times the crew would be fishing we can uncover a little more about what the captain would see when watching the birds. Often times the birds would follow or just fly past the ship while they were sailing. But while the crew was fishing, more birds would stay with the ship and we also see more of them feeding. In this context, feeding means they were most likely feeding on the fish the crew was working on catching. Interestingly they hardly would see the birds naturally feeding. When the ship was still however, we can see an even amount of seen behaviors where they're feeding, flying past, accompanying the ship, and swimming in the water. @fig-ggfig1a
+
+```{r}
+#| label: flock-behav-mod
+#| echo: FALSE
+#| output: FALSE
+#| warning: false
+bird_seas_avg_a <- bird_ship_foc |>
+  filter(behavior %in% c(
+    "flying",
+    "feeding",
+    "sitting_on_water",
+    "accompanying",
+    "flying_past",
+    "following_ship",
+    "naturally_feeding")) |>
+  group_by(season, behavior) |>
+  summarise(avg_count = mean(count, na.rm = TRUE),
+    .groups = "drop")
+
+ggfig2a <- ggplot(bird_seas_avg_a,
+       aes(x = season, y = avg_count,
+           color = behavior)) +
+  geom_point(size = 3, position = position_dodge(width = 0.2)) +
+  geom_smooth(aes(group = behavior),
+    method = "loess",
+    se = FALSE #this is because there is no standard error
+    )+
+  scale_color_discrete(name = "Behaviour",
+    labels = c(
+      "flying" = "Flying",
+      "feeding" = "Feeding",
+      "sitting_on_water" = "Swimming in water",
+      "accompanying" = "Accompanying",
+      "flying_past" = "Flying by",
+      "following_ship" = "Following",
+      "naturally_feeding" = "Naturally Feeding"))+
+  labs(title = "Bird Behaviour Across The Seasons",
+       x = "Season",
+       y = "Average Number of Birds",
+       color = "Behaviour",
+       shape = "Behaviour",
+       caption = 
+       "This graph shows how birds would behave during different times of the 
+       season. Each shape and color is associated with a different behavior 
+    seen from the birds. The colored lines show the trends across the seasons.")+
+  theme_minimal()+
+  theme(plot.caption = element_text(size =9, hjust=0))+
+  theme_minimal()
+```
+
+```{r}
+#| label: fig-ggfig2a
+#| echo: false
+#display graph
+ggfig2a
+```
+
+
+### Seasonal bird behaviors
+Each time they would see a species of bird they'd estimate how many they saw, sometimes a few and other times thousands! Over the years, with thousands of birds seen, they were able to track a pattern in the how many birds were present on their journey and with that they also were able to track how the most frequent bird behaviors in the Southern Ocean across the seasons. In the spring a spike of birds would be seen, with an average of 1500 birds naturally feeding along with around 600 birds feeding with the crew, most likely while they drew in the ample fish swimming through the seas. The birds were seen less thereafter with the least seen in the fall.
+@fig-ggfig2a
+
+### Closing statement
+Long term datasets hold a wealth of knowledge for all interested in the unknown and these logs are no different. We can take records like this and compare it to what we see today. Do we see the same number of birds flying by ships today? Are more birds feeding on food from ships than before? Have their behaviors shifted across the seasons because of climate change? So many questions which can lead to so many solutions. Solutions both in nature and our world as humans. Animal biodiversity can signal to us the health of the local ecosystem and in turn our own environment. Stay curious about the world and what you can uncover.
